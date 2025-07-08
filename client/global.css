@@ -4,94 +4,114 @@
 
 @layer base {
   /**
-   * Tailwind CSS theme
+   * GroupChatLLM v3 Glassmorphic Theme
    * tailwind.config.ts expects the following color variables to be expressed as HSL values.
-   * A different format will require also updating the theme in tailwind.config.ts.
-  */
+   */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Base glassmorphic white theme */
+    --background: 220 30% 98%;
+    --foreground: 220 10% 15%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100% / 0.6;
+    --card-foreground: 220 10% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100% / 0.95;
+    --popover-foreground: 220 10% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 220 20% 25%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 220 15% 95%;
+    --secondary-foreground: 220 10% 25%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 15% 94%;
+    --muted-foreground: 220 10% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 220 15% 92%;
+    --accent-foreground: 220 10% 25%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 220 13% 88%;
+    --input: 0 0% 100% / 0.5;
+    --ring: 220 20% 25%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* AI Model Colors */
+    --gpt4-primary: 216 100% 60%;
+    --gpt4-secondary: 216 100% 95%;
+    --gpt4-accent: 216 100% 85%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --claude-primary: 280 80% 65%;
+    --claude-secondary: 280 80% 95%;
+    --claude-accent: 280 80% 85%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    --gemini-primary: 45 100% 55%;
+    --gemini-secondary: 45 100% 95%;
+    --gemini-accent: 45 100% 85%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    /* Glassmorphic effects */
+    --glass-bg: 0 0% 100% / 0.1;
+    --glass-border: 0 0% 100% / 0.2;
+    --glass-shadow: 0 0% 0% / 0.1;
 
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Synapse animation colors */
+    --synapse-active: 200 100% 70%;
+    --synapse-idle: 220 15% 70%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 220 30% 8%;
+    --foreground: 220 15% 85%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 20% 15% / 0.6;
+    --card-foreground: 220 15% 85%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 20% 12% / 0.95;
+    --popover-foreground: 220 15% 85%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 220 15% 85%;
+    --primary-foreground: 220 30% 8%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 20% 15%;
+    --secondary-foreground: 220 15% 85%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 220 20% 12%;
+    --muted-foreground: 220 10% 55%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 220 20% 18%;
+    --accent-foreground: 220 15% 85%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 220 20% 20%;
+    --input: 220 20% 15% / 0.5;
+    --ring: 220 15% 85%;
+
+    /* AI Model Colors - Dark mode */
+    --gpt4-primary: 216 100% 70%;
+    --gpt4-secondary: 216 100% 15%;
+    --gpt4-accent: 216 100% 25%;
+
+    --claude-primary: 280 80% 75%;
+    --claude-secondary: 280 80% 15%;
+    --claude-accent: 280 80% 25%;
+
+    --gemini-primary: 45 100% 65%;
+    --gemini-secondary: 45 100% 15%;
+    --gemini-accent: 45 100% 25%;
+
+    /* Glassmorphic effects - Dark mode */
+    --glass-bg: 220 20% 15% / 0.1;
+    --glass-border: 220 20% 25% / 0.2;
+    --glass-shadow: 0 0% 0% / 0.2;
+
+    /* Synapse animation colors - Dark mode */
+    --synapse-active: 200 100% 80%;
+    --synapse-idle: 220 15% 40%;
   }
 }
 
@@ -102,5 +122,103 @@
 
   body {
     @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(
+        circle at 20% 20%,
+        hsl(var(--gpt4-primary) / 0.1) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 80% 80%,
+        hsl(var(--claude-primary) / 0.1) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 40% 80%,
+        hsl(var(--gemini-primary) / 0.1) 0%,
+        transparent 50%
+      );
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--glass-border));
+    box-shadow: 0 8px 32px hsl(var(--glass-shadow));
+  }
+
+  .glass-strong {
+    background: hsl(var(--card));
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--glass-border));
+    box-shadow: 0 12px 40px hsl(var(--glass-shadow));
+  }
+
+  .synapse-line {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--synapse-idle)) 0%,
+      hsl(var(--synapse-active)) 50%,
+      hsl(var(--synapse-idle)) 100%
+    );
+    animation: synapse-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes synapse-pulse {
+    0%,
+    100% {
+      opacity: 0.3;
+      transform: scaleX(0.8);
+    }
+    50% {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+  }
+
+  @keyframes typing-dot {
+    0%,
+    20% {
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 1;
+    }
+    80%,
+    100% {
+      opacity: 0.3;
+    }
+  }
+
+  .typing-indicator {
+    animation: typing-dot 1.4s ease-in-out infinite;
+  }
+
+  .typing-indicator:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .typing-indicator:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  .ai-gpt4 {
+    --ai-primary: var(--gpt4-primary);
+    --ai-secondary: var(--gpt4-secondary);
+    --ai-accent: var(--gpt4-accent);
+  }
+
+  .ai-claude {
+    --ai-primary: var(--claude-primary);
+    --ai-secondary: var(--claude-secondary);
+    --ai-accent: var(--claude-accent);
+  }
+
+  .ai-gemini {
+    --ai-primary: var(--gemini-primary);
+    --ai-secondary: var(--gemini-secondary);
+    --ai-accent: var(--gemini-accent);
   }
 }
