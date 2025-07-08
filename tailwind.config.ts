@@ -57,6 +57,32 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // AI Model Colors
+        gpt4: {
+          DEFAULT: "hsl(var(--gpt4-primary))",
+          secondary: "hsl(var(--gpt4-secondary))",
+          accent: "hsl(var(--gpt4-accent))",
+        },
+        claude: {
+          DEFAULT: "hsl(var(--claude-primary))",
+          secondary: "hsl(var(--claude-secondary))",
+          accent: "hsl(var(--claude-accent))",
+        },
+        gemini: {
+          DEFAULT: "hsl(var(--gemini-primary))",
+          secondary: "hsl(var(--gemini-secondary))",
+          accent: "hsl(var(--gemini-accent))",
+        },
+        // Glassmorphic and synapse colors
+        glass: {
+          bg: "hsl(var(--glass-bg))",
+          border: "hsl(var(--glass-border))",
+          shadow: "hsl(var(--glass-shadow))",
+        },
+        synapse: {
+          active: "hsl(var(--synapse-active))",
+          idle: "hsl(var(--synapse-idle))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -80,10 +106,34 @@ export default {
             height: "0",
           },
         },
+        "synapse-pulse": {
+          "0%, 100%": { opacity: "0.3", transform: "scaleX(0.8)" },
+          "50%": { opacity: "1", transform: "scaleX(1)" },
+        },
+        "typing-dot": {
+          "0%, 20%": { opacity: "0.3" },
+          "50%": { opacity: "1" },
+          "80%, 100%": { opacity: "0.3" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        glow: {
+          "0%, 100%": { boxShadow: "0 0 20px hsl(var(--synapse-idle))" },
+          "50%": { boxShadow: "0 0 40px hsl(var(--synapse-active))" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "synapse-pulse": "synapse-pulse 2s ease-in-out infinite",
+        "typing-dot": "typing-dot 1.4s ease-in-out infinite",
+        float: "float 3s ease-in-out infinite",
+        glow: "glow 2s ease-in-out infinite",
+      },
+      backdropBlur: {
+        xs: "2px",
       },
     },
   },
