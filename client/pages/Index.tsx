@@ -413,8 +413,23 @@ export default function Index() {
     ];
   };
 
-  const handleInterruption = (modelId: string, targetMessageId: string) => {
-    handleInterruption(modelId, targetMessageId);
+  const onInterruptRequest = (modelId: string, targetMessageId: string) => {
+    const interruptingModel = models.find((m) => m.id === modelId);
+    if (!interruptingModel) return;
+
+    const interruptionMessage: ConversationMessage = {
+      id: generateMessageId(),
+      modelId: interruptingModel.id,
+      modelName: interruptingModel.name,
+      modelColor: interruptingModel.color,
+      content: generateInterruptionResponse(interruptingModel),
+      type: "interruption",
+      timestamp: new Date(),
+      isComplete: true,
+      referencesTo: [targetMessageId],
+    };
+
+    addMessage(interruptionMessage);
   };
 
   const handleToggleModel = (modelId: string) => {
@@ -619,7 +634,7 @@ export default function Index() {
           messages={conversationMessages}
           activeModels={activeModels.map((m) => m.id)}
           isProcessing={isProcessing}
-          onInterrupt={handleInterruption}
+          onInterrupt={onInterruptRequest}
           className="min-h-96"
         />
 
