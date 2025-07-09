@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  ConversationStream,
-  ConversationMessage,
-} from "@/components/ConversationStream";
+  ThreadedConversationStream,
+  ThreadedMessage,
+} from "@/components/ThreadedConversationStream";
+import {
+  ConversationOrchestrator,
+  AIPersonality,
+  ConversationTiming,
+} from "@/components/ConversationOrchestrator";
 import {
   EnhancedMissionControl,
   ConversationSettings,
@@ -25,42 +30,93 @@ interface AIModel {
   specialization: string;
 }
 
-// AI model configurations with personalities
-const initialModels: AIModel[] = [
+// AI personalities for natural conversation
+const aiPersonalities: AIPersonality[] = [
   {
     id: "gpt4",
     name: "GPT-4 Turbo",
-    shortName: "GPT",
-    avatar: "/api/placeholder/40/40",
-    color: "gpt4",
-    status: "active",
-    personality:
-      "Analytical and systematic. Prefers structured approaches and often starts with frameworks.",
-    specialization: "Logic, analysis, structured thinking",
+    thinkingSpeed: "fast",
+    interruptiveness: "medium",
+    agreeableness: "medium",
+    creativity: "medium",
+    responsePatterns: [
+      "Let me approach this systematically...",
+      "I'll break this down into components...",
+      "From an analytical perspective...",
+    ],
+    interruptionPatterns: [
+      "Hold on, I see a logical issue here...",
+      "Wait, the data doesn't support that...",
+    ],
+    subResponseTriggers: [
+      "analysis",
+      "data",
+      "logic",
+      "framework",
+      "structure",
+    ],
   },
   {
     id: "claude",
     name: "Claude 3.5 Sonnet",
-    shortName: "CLD",
-    avatar: "/api/placeholder/40/40",
-    color: "claude",
-    status: "active",
-    personality:
-      "Thoughtful and nuanced. Considers ethical implications and multiple perspectives.",
-    specialization: "Ethics, philosophy, balanced reasoning",
+    thinkingSpeed: "medium",
+    interruptiveness: "low",
+    agreeableness: "high",
+    creativity: "medium",
+    responsePatterns: [
+      "I appreciate the thoughtfulness of this question...",
+      "This deserves careful consideration...",
+      "I'd like to explore multiple perspectives...",
+    ],
+    interruptionPatterns: [
+      "Sorry to interrupt, but I think we should consider...",
+      "I respectfully disagree because...",
+    ],
+    subResponseTriggers: [
+      "ethics",
+      "perspective",
+      "consideration",
+      "implications",
+      "balance",
+    ],
   },
   {
     id: "gemini",
     name: "Gemini 2.0 Flash",
-    shortName: "GEM",
-    avatar: "/api/placeholder/40/40",
-    color: "gemini",
-    status: "active",
-    personality:
-      "Creative and innovative. Likes to challenge assumptions and propose novel solutions.",
-    specialization: "Innovation, creativity, lateral thinking",
+    thinkingSpeed: "fast",
+    interruptiveness: "high",
+    agreeableness: "low",
+    creativity: "high",
+    responsePatterns: [
+      "What an exciting challenge!",
+      "This makes me think of innovative possibilities...",
+      "Let me offer a completely different angle...",
+    ],
+    interruptionPatterns: [
+      "Whoa, what if we're thinking about this all wrong?",
+      "Plot twist! I just had a crazy idea...",
+    ],
+    subResponseTriggers: [
+      "creative",
+      "innovative",
+      "different",
+      "unique",
+      "outside",
+    ],
   },
 ];
+
+// AI model interface for compatibility
+const initialModels: AIModel[] = aiPersonalities.map((p) => ({
+  id: p.id,
+  name: p.name,
+  shortName: p.id.toUpperCase().slice(0, 3),
+  avatar: "/api/placeholder/40/40",
+  color: p.id as "gpt4" | "claude" | "gemini",
+  status: "active" as const,
+  personality: `${p.thinkingSpeed} thinker, ${p.interruptiveness} interruption style`,
+  specialization: p.responsePatterns[0],
+}));
 
 const defaultSettings: ConversationSettings = {
   allowInterruptions: true,
@@ -71,11 +127,20 @@ const defaultSettings: ConversationSettings = {
   collaborationStyle: "free-form",
 };
 
+// Natural conversation timing
+const conversationTiming: ConversationTiming = {
+  thinkingDelay: [1, 3], // 1-3 seconds thinking
+  responseDelay: [2, 5], // 2-5 seconds to respond
+  interruptionChance: 0.3, // 30% chance to interrupt
+  subResponseChance: 0.4, // 40% chance for sub-response
+  reactionDelay: [0.5, 2], // 0.5-2 seconds reaction time
+};
+
 export default function Index() {
   const [models, setModels] = useState<AIModel[]>(initialModels);
-  const [conversationMessages, setConversationMessages] = useState<
-    ConversationMessage[]
-  >([]);
+  const [threadedMessages, setThreadedMessages] = useState<ThreadedMessage[]>(
+    [],
+  );
   const [isProcessing, setIsProcessing] = useState(false);
   const [conversationSettings, setConversationSettings] =
     useState<ConversationSettings>(defaultSettings);
@@ -86,6 +151,19 @@ export default function Index() {
   });
   const sessionStartRef = useRef(new Date());
   const messageIdCounter = useRef(0);
+  const orchestratorRef = useRef<ConversationOrchestrator | null>(null);
+
+  // Initialize conversation orchestrator
+  useEffect(() => {
+    orchestratorRef.current = new ConversationOrchestrator(
+      aiPersonalities,
+      conversationTiming,
+    );
+
+    return () => {
+      orchestratorRef.current?.cleanup();
+    };
+  }, []);
 
   // Update session duration
   useEffect(() => {
@@ -107,8 +185,8 @@ export default function Index() {
 
   const generateMessageId = () => `msg-${++messageIdCounter.current}`;
 
-  const addMessage = (message: ConversationMessage) => {
-    setConversationMessages((prev) => [...prev, message]);
+  const addThreadedMessage = (message: ThreadedMessage) => {
+    setThreadedMessages((prev) => [...prev, message]);
   };
 
   const handleSendMessage = async (
@@ -117,6 +195,8 @@ export default function Index() {
     mode: string,
     settings: ConversationSettings,
   ) => {
+    if (!orchestratorRef.current) return;
+
     setIsProcessing(true);
     setSessionData((prev) => ({
       ...prev,
@@ -124,7 +204,7 @@ export default function Index() {
     }));
 
     // Add user message
-    const userMessage: ConversationMessage = {
+    const userMessage: ThreadedMessage = {
       id: generateMessageId(),
       modelId: "user",
       modelName: "You",
@@ -134,7 +214,7 @@ export default function Index() {
       timestamp: new Date(),
       isComplete: true,
     };
-    addMessage(userMessage);
+    addThreadedMessage(userMessage);
 
     // Set active models to thinking
     const activeModels = models.filter((m) => m.status !== "inactive");
@@ -146,290 +226,97 @@ export default function Index() {
       ),
     );
 
-    // Start AI conversation
-    await initiateAIConversation(
-      userMessage,
-      activeModels,
-      complexity,
-      mode,
-      settings,
-    );
-    setIsProcessing(false);
-  };
-
-  const initiateAIConversation = async (
-    userMessage: ConversationMessage,
-    activeModels: AIModel[],
-    complexity: number,
-    mode: string,
-    settings: ConversationSettings,
-  ) => {
-    // Show thinking bubbles if enabled
-    if (settings.showThinking) {
-      activeModels.forEach((model, index) => {
-        setTimeout(() => {
-          const thinkingMessage: ConversationMessage = {
-            id: generateMessageId(),
-            modelId: model.id,
-            modelName: model.name,
-            modelColor: model.color,
-            content: "",
-            type: "thinking",
-            timestamp: new Date(),
-            isComplete: false,
-            reasoning: generateThinkingReasoning(
-              model,
-              userMessage.content,
-              mode,
-            ),
-          };
-          addMessage(thinkingMessage);
-        }, index * 500);
-      });
-    }
-
-    // Generate AI responses with potential interruptions
-    for (let round = 0; round < 3; round++) {
-      const respondingModels =
-        round === 0
-          ? activeModels
-          : activeModels.filter(() => Math.random() > 0.4); // Some models might not respond in later rounds
-
-      for (let i = 0; i < respondingModels.length; i++) {
-        const model = respondingModels[i];
-        const delay =
-          settings.responseDelay * 1000 +
-          Math.random() * 2000 +
-          complexity * 300 +
-          round * 1000;
-
-        setTimeout(async () => {
-          const response = await generateAIResponse(
-            model,
-            userMessage.content,
-            conversationMessages,
-            complexity,
-            mode,
-            settings,
-          );
-          addMessage(response);
-
-          // Set model back to active
+    // Start natural conversation
+    try {
+      await orchestratorRef.current.simulateNaturalConversation(
+        userMessage,
+        activeModels.map((m) => m.id),
+        complexity,
+        mode,
+        (message) => {
+          addThreadedMessage(message);
+          // Update model status
           setModels((prev) =>
             prev.map((m) =>
-              m.id === model.id ? { ...m, status: "active" } : m,
+              m.id === message.modelId ? { ...m, status: "active" } : m,
             ),
           );
-
-          // Chance for interruption
-          if (settings.allowInterruptions && Math.random() > 0.7 && round < 2) {
-            setTimeout(
-              () => {
-                const interruptingModel = activeModels.find(
-                  (m) => m.id !== model.id && Math.random() > 0.5,
-                );
-                if (interruptingModel) {
-                  handleInterruption(interruptingModel.id, response.id);
-                }
-              },
-              1000 + Math.random() * 2000,
-            );
-          }
-        }, delay);
-      }
+        },
+        (subMessage, parentId) => {
+          const messageWithParent = { ...subMessage, parentId };
+          addThreadedMessage(messageWithParent);
+        },
+      );
+    } finally {
+      setIsProcessing(false);
+      setModels((prev) => prev.map((m) => ({ ...m, status: "active" })));
     }
   };
 
-  const generateThinkingReasoning = (
-    model: AIModel,
-    userMessage: string,
-    mode: string,
-  ): string => {
-    const reasoningTemplates = {
-      gpt4: [
-        "Let me break this down systematically...",
-        "I need to consider the logical framework here...",
-        "What are the key components I should analyze?",
-      ],
-      claude: [
-        "I should consider the ethical dimensions of this...",
-        "How can I provide a balanced perspective?",
-        "What nuances might others miss?",
-      ],
-      gemini: [
-        "What's a creative angle I could explore?",
-        "How can I challenge conventional thinking here?",
-        "What innovative solutions come to mind?",
-      ],
+  // Update conversation export data
+  const handleExport = async (format: string, options: any) => {
+    const exportData = {
+      threadedMessages: threadedMessages,
+      models: models,
+      sessionData: sessionData,
+      settings: conversationSettings,
     };
-
-    const templates = reasoningTemplates[
-      model.id as keyof typeof reasoningTemplates
-    ] || ["Let me think about this carefully..."];
-    return templates[Math.floor(Math.random() * templates.length)];
+    console.log(`Exporting in ${format} format`, exportData, options);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   };
 
-  const generateAIResponse = async (
-    model: AIModel,
-    originalMessage: string,
-    conversationHistory: ConversationMessage[],
-    complexity: number,
-    mode: string,
-    settings: ConversationSettings,
-  ): Promise<ConversationMessage> => {
-    // Get recent context
-    const recentMessages = conversationHistory.slice(-5);
-    const referencedMessages = recentMessages
-      .filter((msg) => msg.modelId !== model.id && msg.type === "message")
-      .map((msg) => msg.id);
-
-    // Generate response based on model personality
-    const responses = generateResponseByPersonality(
-      model,
-      originalMessage,
-      mode,
-      recentMessages,
-    );
-    const selectedResponse =
-      responses[Math.floor(Math.random() * responses.length)];
-
-    return {
-      id: generateMessageId(),
-      modelId: model.id,
-      modelName: model.name,
-      modelColor: model.color,
-      content: selectedResponse,
-      type: "message",
+  const handleSaveConversation = () => {
+    const conversationData = {
+      threadedMessages: threadedMessages,
+      models,
+      sessionData,
+      settings: conversationSettings,
       timestamp: new Date(),
-      isComplete: true,
-      referencesTo:
-        referencedMessages.length > 0 ? referencedMessages : undefined,
-      confidence: 0.7 + Math.random() * 0.3,
-      reasoning: `${model.specialization}: ${model.personality}`,
     };
-  };
-
-  const generateResponseByPersonality = (
-    model: AIModel,
-    message: string,
-    mode: string,
-    context: ConversationMessage[],
-  ): string[] => {
-    const hasContext = context.some((msg) => msg.modelId !== model.id);
-
-    const responseBank = {
-      gpt4: hasContext
-        ? [
-            "Building on the previous analysis, I'd like to add a systematic framework...",
-            "I notice some logical gaps in the discussion that we should address...",
-            "Let me provide a structured counterpoint to what's been said...",
-            "From a purely analytical standpoint, I see three key issues here...",
-          ]
-        : [
-            "I'll approach this systematically by breaking it into core components...",
-            "Let me establish a logical framework for analyzing this question...",
-            "The most structured way to think about this is through first principles...",
-          ],
-      claude: hasContext
-        ? [
-            "I appreciate the perspectives shared, but I think we should also consider...",
-            "While I agree with much of what's been said, there are ethical implications...",
-            "This is a nuanced topic that deserves deeper consideration of...",
-            "I'd like to offer a more balanced view that incorporates...",
-          ]
-        : [
-            "This is a thoughtful question that requires careful consideration of multiple perspectives...",
-            "I think it's important to approach this with both analytical rigor and ethical sensitivity...",
-            "Let me explore the deeper implications and nuances of this topic...",
-          ],
-      gemini: hasContext
-        ? [
-            "Wait, what if we're thinking about this all wrong? What if...",
-            "I love the direction this is heading! Let me add a creative twist...",
-            "This reminds me of an innovative approach I've been considering...",
-            "Actually, I disagree with the conventional wisdom here. Consider this...",
-          ]
-        : [
-            "Ooh, this is exciting! Let me explore some unconventional angles...",
-            "I'm immediately thinking of several innovative approaches we could take...",
-            "What if we completely reimagined how to approach this problem?",
-          ],
-    };
-
-    return (
-      responseBank[model.id as keyof typeof responseBank] || [
-        "That's an interesting perspective. Let me add my thoughts...",
-      ]
+    localStorage.setItem(
+      "groupchat-conversation",
+      JSON.stringify(conversationData),
     );
   };
 
-  const handleInterruption = async (
-    interruptingModelId: string,
-    targetMessageId: string,
-  ) => {
-    const interruptingModel = models.find((m) => m.id === interruptingModelId);
-    if (!interruptingModel) return;
-
-    const interruptionMessage: ConversationMessage = {
-      id: generateMessageId(),
-      modelId: interruptingModel.id,
-      modelName: interruptingModel.name,
-      modelColor: interruptingModel.color,
-      content: generateInterruptionResponse(interruptingModel),
-      type: "interruption",
-      timestamp: new Date(),
-      isComplete: true,
-      referencesTo: [targetMessageId],
-    };
-
-    addMessage(interruptionMessage);
+  const handleLoadConversation = () => {
+    const saved = localStorage.getItem("groupchat-conversation");
+    if (saved) {
+      const data = JSON.parse(saved);
+      setThreadedMessages(data.threadedMessages || []);
+      setModels(data.models);
+      setSessionData(data.sessionData);
+      setConversationSettings(data.settings || defaultSettings);
+    }
   };
 
-  const generateInterruptionResponse = (model: AIModel): string => {
-    const interruptions = {
-      gpt4: [
-        "Hold on, I think there's a logical flaw in that reasoning...",
-        "Wait, let me interject with a critical point...",
-        "I need to stop you there - the data doesn't support that conclusion...",
-      ],
-      claude: [
-        "Sorry to interrupt, but I think we need to consider the ethical implications...",
-        "I hate to jump in, but there's an important perspective we're missing...",
-        "Excuse me, but I think we should pause and consider...",
-      ],
-      gemini: [
-        "Whoa whoa whoa! What if we're completely wrong about this?",
-        "Plot twist! I just thought of something that changes everything...",
-        "Hold up! I have a wild idea that might flip this whole discussion...",
-      ],
-    };
-
-    const modelInterruptions = interruptions[
-      model.id as keyof typeof interruptions
-    ] || ["Actually, let me add something important here..."];
-
-    return modelInterruptions[
-      Math.floor(Math.random() * modelInterruptions.length)
-    ];
+  const handleClearAll = () => {
+    setThreadedMessages([]);
+    setModels((prev) =>
+      prev.map((model) => ({ ...model, status: "inactive" })),
+    );
+    setSessionData({
+      startTime: new Date(),
+      messageCount: 0,
+      duration: "00:00",
+    });
+    sessionStartRef.current = new Date();
+    messageIdCounter.current = 0;
+    orchestratorRef.current?.cleanup();
   };
 
-  const onInterruptRequest = (modelId: string, targetMessageId: string) => {
-    const interruptingModel = models.find((m) => m.id === modelId);
-    if (!interruptingModel) return;
+  const handleApproveSubResponse = (messageId: string) => {
+    setThreadedMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === messageId
+          ? { ...msg, isApproved: true, type: "message" as const }
+          : msg,
+      ),
+    );
+  };
 
-    const interruptionMessage: ConversationMessage = {
-      id: generateMessageId(),
-      modelId: interruptingModel.id,
-      modelName: interruptingModel.name,
-      modelColor: interruptingModel.color,
-      content: generateInterruptionResponse(interruptingModel),
-      type: "interruption",
-      timestamp: new Date(),
-      isComplete: true,
-      referencesTo: [targetMessageId],
-    };
-
-    addMessage(interruptionMessage);
+  const handleRejectSubResponse = (messageId: string) => {
+    setThreadedMessages((prev) => prev.filter((msg) => msg.id !== messageId));
   };
 
   const handleToggleModel = (modelId: string) => {
@@ -510,7 +397,7 @@ export default function Index() {
   // Create legacy model format for ExportTools compatibility
   const legacyModels = models.map((model) => ({
     ...model,
-    messages: conversationMessages
+    messages: threadedMessages
       .filter((msg) => msg.modelId === model.id && msg.type === "message")
       .map((msg) => ({
         id: msg.id,
@@ -518,6 +405,13 @@ export default function Index() {
         timestamp: msg.timestamp,
         isComplete: msg.isComplete,
       })),
+  }));
+
+  // Create legacy conversation messages for ModelToggleControl
+  const legacyConversationMessages = threadedMessages.map((msg) => ({
+    id: msg.id,
+    modelId: msg.modelId,
+    type: msg.type,
   }));
 
   return (
@@ -607,7 +501,7 @@ export default function Index() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ModelToggleControl
             models={models}
-            conversationMessages={conversationMessages}
+            conversationMessages={legacyConversationMessages}
             onToggleModel={handleToggleModel}
             onToggleAll={handleToggleAllModels}
           />
@@ -630,12 +524,13 @@ export default function Index() {
           onSettingsChange={setConversationSettings}
         />
 
-        {/* Unified Conversation Stream */}
-        <ConversationStream
-          messages={conversationMessages}
+        {/* Threaded Conversation Stream */}
+        <ThreadedConversationStream
+          messages={threadedMessages}
           activeModels={activeModels.map((m) => m.id)}
           isProcessing={isProcessing}
-          onInterrupt={onInterruptRequest}
+          onApproveSubResponse={handleApproveSubResponse}
+          onRejectSubResponse={handleRejectSubResponse}
           className="min-h-96"
         />
 
@@ -645,18 +540,19 @@ export default function Index() {
             <div className="flex items-center justify-center space-x-2 text-synapse-active">
               <div className="w-2 h-2 bg-synapse-active rounded-full animate-pulse" />
               <span className="text-sm font-medium">
-                Neural network active • {activeModels.length} AIs collaborating
+                Neural threads active • {activeModels.length} AIs collaborating
                 •
                 {
-                  conversationMessages.filter((m) => m.type === "interruption")
+                  threadedMessages.filter((m) => m.type === "interruption")
                     .length
                 }{" "}
                 interruptions •
                 {
-                  conversationMessages.filter((m) => m.referencesTo?.length)
+                  threadedMessages.filter((m) => m.type === "sub-response")
                     .length
                 }{" "}
-                cross-references
+                sub-responses •
+                {threadedMessages.filter((m) => m.isApproved).length} approved
               </span>
               <div className="w-2 h-2 bg-synapse-active rounded-full animate-pulse" />
             </div>
