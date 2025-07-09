@@ -607,6 +607,7 @@ export default function Index() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ModelToggleControl
             models={models}
+            conversationMessages={conversationMessages}
             onToggleModel={handleToggleModel}
             onToggleAll={handleToggleAllModels}
           />

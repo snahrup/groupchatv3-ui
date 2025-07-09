@@ -8,6 +8,7 @@ import { AIModel } from "./AIModelPanel";
 
 interface ModelToggleControlProps {
   models: AIModel[];
+  conversationMessages?: Array<{ id: string; modelId: string; type: string }>;
   onToggleModel: (modelId: string) => void;
   onToggleAll: (active: boolean) => void;
   className?: string;
@@ -15,6 +16,7 @@ interface ModelToggleControlProps {
 
 export function ModelToggleControl({
   models,
+  conversationMessages = [],
   onToggleModel,
   onToggleAll,
   className,
@@ -26,7 +28,10 @@ export function ModelToggleControl({
   const noneActive = activeCount === 0;
 
   const getModelStats = (model: AIModel) => {
-    const messageCount = model.messages.length;
+    // Count messages from the unified conversation for this model
+    const messageCount = conversationMessages.filter(
+      (msg) => msg.modelId === model.id && msg.type === "message",
+    ).length;
     const avgResponseTime = "~2.3s"; // This would be calculated from actual data
 
     return {
@@ -248,7 +253,10 @@ export function ModelToggleControl({
           </div>
           <div className="text-center">
             <div className="text-lg font-bold text-foreground">
-              {models.reduce((sum, model) => sum + model.messages.length, 0)}
+              {
+                conversationMessages.filter((msg) => msg.type === "message")
+                  .length
+              }
             </div>
             <div className="text-muted-foreground">Total Messages</div>
           </div>
