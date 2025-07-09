@@ -341,20 +341,6 @@ export default function Index() {
     );
   };
 
-  const handleSaveConversation = () => {
-    const conversationData = {
-      messages: conversationMessages,
-      models,
-      sessionData,
-      settings: conversationSettings,
-      timestamp: new Date(),
-    };
-    localStorage.setItem(
-      "groupchat-conversation",
-      JSON.stringify(conversationData),
-    );
-  };
-
   const handleLoadConversation = () => {
     const saved = localStorage.getItem("groupchat-conversation");
     if (saved) {
