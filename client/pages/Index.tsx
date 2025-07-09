@@ -341,20 +341,6 @@ export default function Index() {
     );
   };
 
-  const handleClearAll = () => {
-    setConversationMessages([]);
-    setModels((prev) =>
-      prev.map((model) => ({ ...model, status: "inactive" })),
-    );
-    setSessionData({
-      startTime: new Date(),
-      messageCount: 0,
-      duration: "00:00",
-    });
-    sessionStartRef.current = new Date();
-    messageIdCounter.current = 0;
-  };
-
   const activeModels = models.filter((m) => m.status !== "inactive");
 
   // Create legacy model format for ExportTools compatibility
