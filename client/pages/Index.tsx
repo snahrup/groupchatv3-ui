@@ -341,17 +341,6 @@ export default function Index() {
     );
   };
 
-  const handleLoadConversation = () => {
-    const saved = localStorage.getItem("groupchat-conversation");
-    if (saved) {
-      const data = JSON.parse(saved);
-      setConversationMessages(data.messages || []);
-      setModels(data.models);
-      setSessionData(data.sessionData);
-      setConversationSettings(data.settings || defaultSettings);
-    }
-  };
-
   const handleClearAll = () => {
     setConversationMessages([]);
     setModels((prev) =>
