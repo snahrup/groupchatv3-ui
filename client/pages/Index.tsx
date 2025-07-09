@@ -341,18 +341,6 @@ export default function Index() {
     );
   };
 
-  const handleExport = async (format: string, options: any) => {
-    // Export conversation messages
-    const exportData = {
-      messages: conversationMessages,
-      models: models,
-      sessionData: sessionData,
-      settings: conversationSettings,
-    };
-    console.log(`Exporting in ${format} format`, exportData, options);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  };
-
   const handleSaveConversation = () => {
     const conversationData = {
       messages: conversationMessages,
